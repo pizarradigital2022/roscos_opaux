@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rosco Sistema operativo Ubuntu - Linux - Pasapalabra</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #rosco {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+    }
+    .letter {
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      font-weight: bold;
+      user-select: none;
+      cursor: default;
+    }
+    #center-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+    }
+    #hint-box, #answer-box {
+      margin: 10px auto;
+      width: 80%;
+    }
+    #hint {
+      font-size: 1.2em;
+      font-weight: bold;
+      min-height: 50px;
+    }
+    input[type="text"] {
+      width: 50%;
+      padding: 5px;
+      font-size: 1em;
+      text-transform: none; /* allow any case */
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #timer {
+      font-size: 1.5em;
+      margin: 10px;
+      font-weight: bold;
+    }
+    #solution {
+      color: red;
+      font-weight: bold;
+      min-height: 20px;
+      margin-top: 5px;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    footer img {
+      vertical-align: middle;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rosco Sistema operativo Ubuntu - Linux - Pasapalabra</h1>
+  <div id="timer">Tiempo: 05:00</div>
+  <div id="rosco">
+    <img id="center-image" src="./IMG_2793.png" alt="Pensando" />
+  </div>
+  <div id="hint-box">
+    <p id="hint">Haz clic en "Jugar" para comenzar</p>
+  </div>
+  <div id="answer-box">
+    <input type="text" id="answer" placeholder="Tu respuesta..." autocomplete="off" />
+    <div>
+      <button onclick="checkAnswer()">Comprobar</button>
+      <button onclick="passWord()">Pasapalabra</button>
+      <button id="play-button" onclick="startGame()">Jugar</button>
+    </div>
+  </div>
+  <div id="solution"></div>
+
+  <footer>
+    <p>
+      <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="./88x31.png" alt="Licencia CC-BY-SA" /></a>
+      Joaquín Candañedo Arancón
+    </p>
+  </footer>
+
+  <script>
+    // Palabras y pistas basadas en "Sistema operativo Ubuntu - Linux"
+ const words = {
+    A: { answer: "android", hint: "Distribución de Linux desarrollada por Google para dispositivos móviles." },
+    B: { answer: "boot", hint: "Directorio que contiene los archivos de arranque del sistema operativo." },
+    C: { answer: "chmod", hint: "Comando que permite cambiar los permisos de archivos y carpetas." },
+    D: { answer: "debian", hint: "Distribución base de Ubuntu, reconocida por su estabilidad." },
+    E: { answer: "ext4", hint: "Sistema de archivos más común en Linux, sucesor de ext3." },
+    F: { answer: "formatear", hint: "Acción que borra el contenido de una unidad y le da un sistema de archivos." },
+    G: { answer: "gnome", hint: "Entorno de escritorio predeterminado en Ubuntu." },
+    H: { answer: "home", hint: "Directorio donde se guardan las carpetas personales de los usuarios." },
+    I: { answer: "interfaz gráfica", hint: "Sistema visual que permite la interacción con el usuario, como GNOME." },
+    J: { answer: "jerarquía de memoria", hint: "Organización de los distintos niveles de almacenamiento." },
+    K: { answer: "kernel", hint: "Núcleo del sistema operativo Linux, su componente más esencial." },
+    L: { answer: "linux", hint: "Sistema operativo libre y de código abierto basado en Unix." },
+    M: { answer: "montar", hint: "Proceso para hacer accesible una unidad de almacenamiento en el sistema." },
+    N: { answer: "núcleo", hint: "Corazón del sistema operativo, encargado de gestionar recursos." },
+    Ñ: { answer: "ñu", hint: "Proyecto que da nombre a la licencia GNU/GPL bajo la cual se distribuye Linux. (Escrito en español)." },
+    O: { answer: "open source", hint: "Filosofía de desarrollo que promueve el acceso libre al código fuente." },
+    P: { answer: "permisos", hint: "Definen quién puede leer, escribir o ejecutar archivos y carpetas." },
+    Q: { answer: "quitar", hint: "Acción para retirar una unidad del sistema de archivos." },
+    R: { answer: "root", hint: "Usuario con privilegios totales en el sistema Linux." },
+    S: { answer: "samba", hint: "Protocolo que permite compartir archivos y recursos en red." },
+    T: { answer: "terminal", hint: "Interfaz de línea de comandos para controlar el sistema operativo." },
+    U: { answer: "ubuntu", hint: "Distribución de Linux basada en Debian, fácil de usar y popular." },
+    V: { answer: "ventana", hint: "Elemento gráfico de la interfaz donde se muestra el contenido de carpetas y apps." },
+    W: { answer: "write", hint: "Permiso que permite escribir o modificar un archivo." },
+    X: { answer: "x", hint: "Permiso para ejecutar archivos o scripts en Linux." },
+    Y: { answer: "yes", hint: "Respuesta afirmativa usada frecuentemente en comandos en terminal." },
+    Z: { answer: "zip", hint: "Formato de compresión de archivos compatible con Linux." }
+  };
+	  
+    let letters;
+    let current;
+    let timer;
+    let timeLeft;
+
+    function createRosco() {
+      const rosco = document.getElementById("rosco");
+      rosco.innerHTML = '<img id="center-image" src="./IMG_2793.png" alt="Pensando">';
+      const radius = 200;
+      const centerX = 250;
+      const centerY = 250;
+      letters.forEach((letter, i) => {
+        const angle = (2 * Math.PI / letters.length) * i;
+        const x = centerX + radius * Math.sin(angle);
+        const y = centerY - radius * Math.cos(angle);
+        const btn = document.createElement("div");
+        btn.className = "letter";
+        btn.innerText = letter;
+        btn.style.left = `${x - 25}px`;
+        btn.style.top = `${y - 25}px`;
+        btn.id = `btn-${letter}`;
+        rosco.appendChild(btn);
+      });
+    }
+
+    function startGame() {
+      document.getElementById("play-button").style.display = "none";
+      letters = Object.keys(words);
+      timeLeft = 300;
+      current = 0;
+      createRosco();
+      for (const letter of letters) {
+        document.getElementById(`btn-${letter}`).style.backgroundColor = "blue";
+      }
+      nextQuestion();
+      clearInterval(timer);
+      timer = setInterval(updateTimer, 1000);
+      document.getElementById("answer").focus();
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      let minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      let seconds = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById("timer").innerText = `Tiempo: ${minutes}:${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        endGame("Tiempo terminado");
+      }
+    }
+
+    function nextQuestion() {
+      if (letters.length === 0) return;
+      // Restaurar color del botón anterior si está en amarillo
+      document.querySelectorAll(".letter").forEach((btn) => {
+        if (btn.style.backgroundColor === "yellow") {
+          btn.style.backgroundColor = "blue";
+        }
+      });
+      document.getElementById("solution").innerText = "";
+      let letter = letters[current];
+      document.getElementById("hint").innerText = words[letter].hint;
+      const btn = document.getElementById(`btn-${letter}`);
+      btn.style.backgroundColor = "yellow";
+      document.getElementById("answer").value = "";
+      document.getElementById("answer").focus();
+    }
+
+    function checkAnswer() {
+      if (letters.length === 0) return;
+      let letter = letters[current];
+      let input = document.getElementById("answer").value.toLowerCase().trim();
+      const correct = words[letter].answer.toLowerCase();
+
+      const btn = document.getElementById(`btn-${letter}`);
+
+      if (input === correct) {
+        btn.style.backgroundColor = "green";
+        document.getElementById("solution").innerText = "";
+      } else {
+        btn.style.backgroundColor = "red";
+        document.getElementById("solution").innerText = `Solución correcta: ${words[letter].answer}`;
+      }
+      letters.splice(current, 1);
+      if (letters.length > 0) {
+        current %= letters.length;
+        nextQuestion();
+      } else {
+        clearInterval(timer);
+        endGame("¡Rosco completado!");
+      }
+    }
+
+    function passWord() {
+      if (letters.length === 0) return;
+      current = (current + 1) % letters.length;
+      nextQuestion();
+    }
+
+    function endGame(message) {
+      document.getElementById("hint").innerText = message;
+      document.getElementById("play-button").style.display = "inline-block";
+      document.getElementById("solution").innerText = "";
+      document.getElementById("answer").value = "";
+    }
+  </script>
+</body>
+</html>

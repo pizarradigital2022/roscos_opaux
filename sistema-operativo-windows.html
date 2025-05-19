@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rosco Sistema Operativo Windows - Pasapalabra</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #rosco {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+    }
+    .letter {
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      font-weight: bold;
+      cursor: default;
+      user-select: none;
+    }
+    #center-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+    }
+    #hint-box, #answer-box {
+      margin: 10px auto;
+      width: 80%;
+    }
+    #hint {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 50%;
+      padding: 5px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 1em;
+    }
+    #timer {
+      font-size: 1.5em;
+      margin: 10px;
+      font-weight: bold;
+    }
+    #solution {
+      color: red;
+      font-weight: bold;
+      min-height: 1.5em;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    footer img {
+      vertical-align: middle;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rosco Sistema Operativo Windows - Pasapalabra</h1>
+  <div id="timer">Tiempo: 05:00</div>
+  <div id="rosco">
+    <img id="center-image" src="./IMG_2793.png" alt="Pensando" />
+  </div>
+  <div id="hint-box">
+    <p id="hint">Haz clic en "Jugar" para comenzar</p>
+  </div>
+  <div id="answer-box">
+    <input type="text" id="answer" placeholder="Tu respuesta..." autocomplete="off" />
+    <div>
+      <button onclick="checkAnswer()">Comprobar</button>
+      <button onclick="passWord()">Pasapalabra</button>
+      <button id="play-button" onclick="startGame()">Jugar</button>
+    </div>
+  </div>
+  <div id="solution"></div>
+
+  <footer>
+    <p>
+      <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+        <img src="./88x31.png" alt="Licencia CC-BY-SA" />
+      </a>
+      Joaquín Candañedo Arancón
+    </p>
+  </footer>
+
+  <script>
+    // Vocabulario completo para el rosco
+   const words = {
+    A: { answer: "administrador", hint: "Usuario con acceso ilimitado al sistema." },
+    B: { answer: "barra de tareas", hint: "Se encuentra en la parte inferior del escritorio y contiene el botón de inicio, aplicaciones abiertas, etc." },
+    C: { answer: "carpeta", hint: "Directorio que puede contener archivos, carpetas o accesos directos." },
+    D: { answer: "desfragmentador", hint: "Herramienta administrativa que reagrupa fragmentos de archivos en el disco duro." },
+    E: { answer: "escritorio", hint: "Pantalla principal que se muestra al arrancar Windows." },
+    F: { answer: "formateo", hint: "Proceso para preparar una unidad de almacenamiento (puede ser rápido o lento)." },
+    G: { answer: "gestión de programas", hint: "Parte de la administración del sistema que permite instalar, desinstalar o reparar software." },
+    H: { answer: "heredados", hint: "Tipo de permisos que se propagan desde una carpeta contenedora." },
+    I: { answer: "iconos", hint: "Representaciones gráficas en el escritorio de archivos, carpetas o accesos directos." },
+    J: { answer: "jerarquía de memoria", hint: "Pirámide con los diferentes niveles de almacenamiento donde las unidades se sitúan en los niveles inferiores." },
+    K: { answer: "kilobyte", hint: "Unidad de información que representa 1024 bytes." },
+    L: { answer: "liberador de espacio", hint: "Herramienta administrativa para eliminar archivos temporales." },
+    M: { answer: "menú de inicio", hint: "Se abre con el botón de inicio y contiene accesos a aplicaciones y configuración." },
+    N: { answer: "ntfs", hint: "Sistema de archivos utilizado en versiones modernas de Windows." },
+    Ñ: { answer: "señal", hint: "Contiene Ñ: Información transmitida entre dispositivos." },
+    O: { answer: "operaciones", hint: "Conjunto de acciones que se pueden realizar sobre archivos y carpetas (copiar, eliminar...)."},
+    P: { answer: "permisos", hint: "Derechos que definen lo que un usuario puede hacer con archivos o carpetas." },
+    Q: { answer: "cuadro de búsqueda", hint: "Contiene la Q: Parte del sistema desde donde se puede buscar configuraciones, archivos, programas, etc." },
+    R: { answer: "renombrar", hint: "Acción que permite cambiar el nombre a un archivo o carpeta (F2)." },
+    S: { answer: "sistema de archivos", hint: "Organización de datos en una unidad, como FAT32 o NTFS." },
+    T: { answer: "tareas", hint: "Se pueden programar con el programador de tareas." },
+    U: { answer: "unidad", hint: "Dispositivo lógico de almacenamiento (como C:)." },
+    V: { answer: "ventana", hint: "Elemento visual del sistema con barra de título, menú, desplazamiento, etc." },
+    W: { answer: "windows", hint: "Sistema operativo de Microsoft que gestiona los recursos del equipo." },
+    X: { answer: "ejecución", hint: "Uno de los permisos especiales aplicable a archivos ejecutables (rwx) (palabra completa en inglés)." },
+    Y: { answer: "megabyte", hint: "Contiene la Y: unidad de información correspondiente a 1048576 bytes (1024x1024 bytes)." },
+    Z: { answer: "maximizar", hint: "Contiene la Z: agrandar una ventana hasta que ocupa todo el área visible del escritorio." }
+  };
+
+    let letters;
+    let current;
+    let timer;
+    let timeLeft;
+
+    function createRosco() {
+      const rosco = document.getElementById("rosco");
+      rosco.innerHTML = '<img id="center-image" src="./IMG_2793.png" alt="Pensando">';
+      const radius = 200;
+      const centerX = 250;
+      const centerY = 250;
+      letters.forEach((letter, i) => {
+        const angle = (2 * Math.PI / letters.length) * i;
+        const x = centerX + radius * Math.sin(angle);
+        const y = centerY - radius * Math.cos(angle);
+        const btn = document.createElement("div");
+        btn.className = "letter";
+        btn.innerText = letter;
+        btn.style.left = `${x - 25}px`;
+        btn.style.top = `${y - 25}px`;
+        btn.id = `btn-${letter}`;
+        rosco.appendChild(btn);
+      });
+    }
+
+    function startGame() {
+      document.getElementById("play-button").style.display = "none";
+      letters = Object.keys(words);
+      timeLeft = 300;
+      current = 0;
+      createRosco();
+      letters.forEach(letter => {
+        document.getElementById(`btn-${letter}`).style.backgroundColor = "blue";
+      });
+      nextQuestion();
+      clearInterval(timer);
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      let minutes = Math.floor(timeLeft / 60).toString().padStart(2, "0");
+      let seconds = (timeLeft % 60).toString().padStart(2, "0");
+      document.getElementById("timer").innerText = `Tiempo: ${minutes}:${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        endGame("Tiempo terminado");
+      }
+    }
+
+    function nextQuestion() {
+      if (letters.length === 0) return;
+      // Restaurar color del botón anterior si está amarillo
+      document.querySelectorAll(".letter").forEach((btn) => {
+        if (btn.style.backgroundColor === "yellow") {
+          btn.style.backgroundColor = "blue";
+        }
+      });
+      document.getElementById("solution").innerText = "";
+      let letter = letters[current];
+      document.getElementById("hint").innerText = words[letter].hint;
+      const btn = document.getElementById(`btn-${letter}`);
+      btn.style.backgroundColor = "yellow";
+    }
+
+    function checkAnswer() {
+      let letter = letters[current];
+      let input = document.getElementById("answer").value.toLowerCase().trim();
+
+      // Normalización para ignorar mayúsculas, tildes y espacios extra
+      const normalize = (str) =>
+        str
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // elimina tildes
+          .replace(/\s+/g, " ")
+          .trim();
+
+      let userAnswer = normalize(input);
+      let correctAnswer = normalize(words[letter].answer);
+
+      const btn = document.getElementById(`btn-${letter}`);
+
+      if (userAnswer === correctAnswer) {
+        btn.style.backgroundColor = "green";
+        document.getElementById("solution").innerText = "";
+      } else {
+        btn.style.backgroundColor = "red";
+        document.getElementById(
+          "solution"
+        ).innerText = `Solución correcta: ${words[letter].answer}`;
+      }
+
+      document.getElementById("answer").value = "";
+      letters.splice(current, 1);
+      if (letters.length > 0) {
+        current %= letters.length;
+        nextQuestion();
+      } else {
+        clearInterval(timer);
+        endGame("¡Rosco completado!");
+      }
+    }
+
+    function passWord() {
+      current = (current + 1) % letters.length;
+      nextQuestion();
+    }
+
+    function endGame(message) {
+      document.getElementById("hint").innerText = message;
+      document.getElementById("play-button").style.display = "inline-block";
+    }
+  </script>
+</body>
+</html>

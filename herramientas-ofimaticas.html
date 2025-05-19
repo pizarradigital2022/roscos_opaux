@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Rosco Informática - Pasapalabra</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #rosco {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+    }
+    .letter {
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      font-weight: bold;
+      user-select: none;
+    }
+    #center-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+    }
+    #hint-box, #answer-box {
+      margin: 10px auto;
+      width: 80%;
+    }
+    #hint {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 50%;
+      padding: 5px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #timer {
+      font-size: 1.5em;
+      margin: 10px;
+      font-weight: bold;
+    }
+    #solution {
+      color: red;
+      font-weight: bold;
+      min-height: 1.5em;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    footer img {
+      vertical-align: middle;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rosco Informática - Pasapalabra: Sistema operativos en red</h1>
+  <div id="timer">Tiempo: 05:00</div>
+  <div id="rosco">
+    <img id="center-image" src="./IMG_2793.png" alt="Pensando">
+  </div>
+  <div id="hint-box">
+    <p id="hint">Haz clic en "Jugar" para comenzar</p>
+  </div>
+  <div id="answer-box">
+    <input type="text" id="answer" placeholder="Tu respuesta...">
+    <div>
+      <button onclick="checkAnswer()">Comprobar</button>
+      <button onclick="passWord()">Pasapalabra</button>
+      <button id="play-button" onclick="startGame()">Jugar</button>
+    </div>
+  </div>
+  <div id="solution"></div>
+
+  <footer>
+    <p>
+      <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+        <img src="./88x31.png" alt="Licencia CC-BY-SA">
+      </a>
+      Joaquín Candañedo Arancón
+    </p>
+  </footer>
+
+  <script>
+    // Vocabulario herramientas ofimáticas
+const words = {
+    A: { answer: "apache", hint: "Fundación que sustenta la suite ofimática OpenOffice." },
+    B: { answer: "barra de herramientas", hint: "Elemento de la interfaz gráfica con accesos a funciones comunes." },
+    C: { answer: "calc", hint: "Hoja de cálculo libre incluida en LibreOffice y OpenOffice." },
+    D: { answer: "docx", hint: "Formato de archivo moderno del procesador de textos Word." },
+    E: { answer: "excel", hint: "Hoja de cálculo de la suite Microsoft Office." },
+    F: { answer: "formato", hint: "Estructura de un archivo (como .doc, .ppt, .odt) o estilo de un documento." },
+    G: { answer: "google docs", hint: "Procesador de texto en la nube de Google." },
+    H: { answer: "hoja de cálculo", hint: "Programa que permite manipular datos organizados en tablas." },
+    I: { answer: "impress", hint: "Software libre para crear presentaciones, parte de LibreOffice y OpenOffice." },
+    J: { answer: "jpeg", hint: "Formato de imagen que puede insertarse en documentos ofimáticos." },
+    K: { answer: "keynote", hint: "Editor de presentaciones desarrollado por Apple." },
+    L: { answer: "libreoffice", hint: "Suite ofimática libre y de código abierto." },
+    M: { answer: "microsoft office", hint: "Conocida suite ofimática que incluye Word, Excel y PowerPoint." },
+    N: { answer: "numbers", hint: "Hoja de cálculo de la suite iWork de Apple." },
+    Ñ: { answer: "ñu", hint: "Proyecto que da nombre a la licencia GNU/GPL bajo la cual se distribuye Linux. (Escrito en español)." },
+    O: { answer: "ofimática", hint: "Conjunto de técnicas y programas usados en tareas de oficina." },
+    P: { answer: "powerpoint", hint: "Programa de presentaciones de Microsoft Office." },
+    Q: { answer: "quitar formato", hint: "Función que elimina estilos de texto en documentos." },
+    R: { answer: "rtf", hint: "Formato de texto enriquecido compatible con múltiples procesadores de texto." },
+    S: { answer: "suite ofimática", hint: "Conjunto de programas ofimáticos agrupados en un solo paquete." },
+    T: { answer: "texto", hint: "Elemento básico que se edita en un procesador como Word o Writer." },
+    U: { answer: "usuario", hint: "Persona que interactúa con el software ofimático." },
+    V: { answer: "vista previa", hint: "Función para revisar cómo se verá un documento antes de imprimir." },
+    W: { answer: "writer", hint: "Procesador de textos libre incluido en LibreOffice y OpenOffice." },
+    X: { answer: "xlsx", hint: "Formato moderno de archivos de Excel." },
+    Y: { answer: "youtube", hint: "Plataforma desde la que se pueden insertar videos en presentaciones." },
+    Z: { answer: "zoom", hint: "Herramienta para ampliar o reducir la vista de un documento." }
+  };
+
+    let letters;
+    let current;
+    let timer;
+    let timeLeft;
+
+    function createRosco() {
+      const rosco = document.getElementById("rosco");
+      rosco.innerHTML = '<img id="center-image" src="./IMG_2793.png" alt="Pensando">';
+      const radius = 200;
+      const centerX = 250;
+      const centerY = 250;
+      letters.forEach((letter, i) => {
+        const angle = (2 * Math.PI / letters.length) * i;
+        const x = centerX + radius * Math.sin(angle);
+        const y = centerY - radius * Math.cos(angle);
+        const btn = document.createElement("div");
+        btn.className = "letter";
+        btn.innerText = letter;
+        btn.style.left = `${x - 25}px`;
+        btn.style.top = `${y - 25}px`;
+        btn.id = `btn-${letter}`;
+        rosco.appendChild(btn);
+      });
+    }
+
+    function startGame() {
+      document.getElementById("play-button").style.display = "none";
+      letters = Object.keys(words);
+      timeLeft = 300; // 5 minutos en segundos
+      current = 0;
+      createRosco();
+      for (const letter of letters) {
+        document.getElementById(`btn-${letter}`).style.backgroundColor = "blue";
+      }
+      nextQuestion();
+      clearInterval(timer);
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      let minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      let seconds = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById("timer").innerText = `Tiempo: ${minutes}:${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        endGame("Tiempo terminado");
+      }
+    }
+
+    function nextQuestion() {
+      if (letters.length === 0) return;
+      // Restaurar color de botones que estaban en amarillo a azul
+      document.querySelectorAll('.letter').forEach(btn => {
+        if (btn.style.backgroundColor === 'yellow') {
+          btn.style.backgroundColor = 'blue';
+        }
+      });
+      document.getElementById("solution").innerText = "";
+      let letter = letters[current];
+      document.getElementById("hint").innerText = words[letter].hint;
+      const btn = document.getElementById(`btn-${letter}`);
+      btn.style.backgroundColor = "yellow";
+    }
+
+    function checkAnswer() {
+      if (letters.length === 0) return;
+      let letter = letters[current];
+      let input = document.getElementById("answer").value.toLowerCase().trim();
+      const btn = document.getElementById(`btn-${letter}`);
+
+      if (input === words[letter].answer.toLowerCase()) {
+        btn.style.backgroundColor = "green";
+        document.getElementById("solution").innerText = "";
+      } else {
+        btn.style.backgroundColor = "red";
+        document.getElementById("solution").innerText = `Solución correcta: ${words[letter].answer}`;
+      }
+
+      document.getElementById("answer").value = "";
+      letters.splice(current, 1);
+
+      if (letters.length > 0) {
+        current %= letters.length;
+        nextQuestion();
+      } else {
+        clearInterval(timer);
+        endGame("¡Rosco completado!");
+      }
+    }
+
+    function passWord() {
+      if (letters.length === 0) return;
+      current = (current + 1) % letters.length;
+      nextQuestion();
+    }
+
+    function endGame(message) {
+      document.getElementById("hint").innerText = message;
+      document.getElementById("play-button").style.display = "inline-block";
+      document.getElementById("answer").value = "";
+      document.getElementById("solution").innerText = "";
+    }
+  </script>
+</body>
+</html>

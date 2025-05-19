@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rosco Servicios Básicos de Internet - Pasapalabra</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #rosco {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+    }
+    .letter {
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      font-weight: bold;
+      user-select: none;
+    }
+    #center-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+    }
+    #hint-box, #answer-box {
+      margin: 10px auto;
+      width: 80%;
+    }
+    #hint {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 50%;
+      padding: 5px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #timer {
+      font-size: 1.5em;
+      margin: 10px;
+      font-weight: bold;
+    }
+    #solution {
+      color: red;
+      font-weight: bold;
+      min-height: 1.5em;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    footer img {
+      vertical-align: middle;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rosco Servicios Básicos de Internet - Pasapalabra</h1>
+  <div id="timer">Tiempo: 05:00</div>
+  <div id="rosco">
+    <img id="center-image" src="./IMG_2793.png" alt="Pensando" />
+  </div>
+  <div id="hint-box">
+    <p id="hint">Haz clic en "Jugar" para comenzar</p>
+  </div>
+  <div id="answer-box">
+    <input type="text" id="answer" placeholder="Tu respuesta..." autocomplete="off" />
+    <div>
+      <button onclick="checkAnswer()">Comprobar</button>
+      <button onclick="passWord()">Pasapalabra</button>
+      <button id="play-button" onclick="startGame()">Jugar</button>
+    </div>
+  </div>
+  <div id="solution"></div>
+
+  <footer>
+    <p>
+      <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+        <img src="./88x31.png" alt="Licencia CC-BY-SA" />
+      </a>
+      Joaquín Candañedo Arancón
+    </p>
+  </footer>
+
+  <script>
+    // Vocabulario de "Servicios básicos de Internet"
+const words = {
+  A: { answer: "arpanet", hint: "Red precursora de Internet creada por el Departamento de Defensa de EE. UU." },
+  B: { answer: "buscador", hint: "Herramienta que permite localizar páginas web en Internet." },
+  C: { answer: "cliente", hint: "Ordenador o dispositivo que solicita servicios a un servidor en una red." },
+  D: { answer: "dirección ip", hint: "Identificador lógico único de un dispositivo en una red." },
+  E: { answer: "e-mail", hint: "Nombre en inglés del correo electrónico." },
+  F: { answer: "ftp", hint: "Protocolo de transferencia de archivos." },
+  G: { answer: "google", hint: "Famoso buscador y empresa relacionada con múltiples servicios de Internet." },
+  H: { answer: "http", hint: "Protocolo para la transferencia de hipertextos en la web." },
+  I: { answer: "internet", hint: "Red mundial de redes basada en los protocolos TCP/IP." },
+  J: { answer: "javascript", hint: "Lenguaje comúnmente utilizado en la programación de páginas web." },
+  K: { answer: "keyword", hint: "Término usado para afinar búsquedas en buscadores." },
+  L: { answer: "leechers", hint: "Usuarios que descargan contenido en redes P2P." },
+  M: { answer: "mac", hint: "Dirección física de un dispositivo en la red, grabada en la tarjeta de red." },
+  N: { answer: "navegador", hint: "Aplicación para acceder y visualizar páginas web." },
+  Ñ: { answer: "señal", hint: "Contiene Ñ: Elemento implicado en la transmisión de datos en redes." },
+  O: { answer: "opera", hint: "Navegador web disponible para múltiples sistemas operativos." },
+  P: { answer: "protocolo", hint: "Conjunto de normas para el intercambio de datos entre sistemas." },
+  Q: { answer: "qos", hint: "Calidad del servicio en redes (Quality of Service)." },
+  R: { answer: "router", hint: "Dispositivo que enruta datos entre redes." },
+  S: { answer: "servidor", hint: "Ordenador que ofrece recursos o servicios a otros equipos." },
+  T: { answer: "tcp/ip", hint: "Conjunto de protocolos base para el funcionamiento de Internet." },
+  U: { answer: "url", hint: "Localizador uniforme de recursos, dirección de una web." },
+  V: { answer: "videoconferencia", hint: "Comunicación en tiempo real mediante vídeo, vía red." },
+  W: { answer: "www", hint: "Sistema de documentos enlazados accesibles en la web." },
+  X: { answer: "extensión", hint: "Complemento funcional del navegador web." },
+  Y: { answer: "yahoo!", hint: "Proveedor de servicios como e-mail y buscador." },
+  Z: { answer: "zona de visualización", hint: "Parte del navegador donde se muestra el contenido de la web." }
+};
+
+
+    let letters;
+    let current;
+    let timer;
+    let timeLeft;
+
+    function createRosco() {
+      const rosco = document.getElementById("rosco");
+      rosco.innerHTML = '<img id="center-image" src="./IMG_2793.png" alt="Pensando">';
+      const radius = 200;
+      const centerX = 250;
+      const centerY = 250;
+      letters.forEach((letter, i) => {
+        const angle = (2 * Math.PI / letters.length) * i;
+        const x = centerX + radius * Math.sin(angle);
+        const y = centerY - radius * Math.cos(angle);
+        const btn = document.createElement("div");
+        btn.className = "letter";
+        btn.innerText = letter;
+        btn.style.left = `${x - 25}px`;
+        btn.style.top = `${y - 25}px`;
+        btn.id = `btn-${letter}`;
+        rosco.appendChild(btn);
+      });
+    }
+
+    function startGame() {
+      document.getElementById("play-button").style.display = "none";
+      letters = Object.keys(words);
+      timeLeft = 300;
+      current = 0;
+      createRosco();
+      for (const letter of letters) {
+        document.getElementById(`btn-${letter}`).style.backgroundColor = "blue";
+      }
+      nextQuestion();
+      clearInterval(timer);
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      let minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      let seconds = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById("timer").innerText = `Tiempo: ${minutes}:${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        endGame("Tiempo terminado");
+      }
+    }
+
+    function nextQuestion() {
+      if (letters.length === 0) return;
+      // Restaurar color del botón anterior si está en amarillo
+      document.querySelectorAll('.letter').forEach(btn => {
+        if (btn.style.backgroundColor === 'yellow') {
+          btn.style.backgroundColor = 'blue';
+        }
+      });
+      document.getElementById("solution").innerText = "";
+      let letter = letters[current];
+      document.getElementById("hint").innerText = words[letter].hint;
+      const btn = document.getElementById(`btn-${letter}`);
+      btn.style.backgroundColor = "yellow";
+    }
+
+    function checkAnswer() {
+      let letter = letters[current];
+      let input = document.getElementById("answer").value.toLowerCase().trim();
+      const correctAnswer = words[letter].answer.toLowerCase();
+      const btn = document.getElementById(`btn-${letter}`);
+
+      if (input === correctAnswer) {
+        btn.style.backgroundColor = "green";
+      } else {
+        btn.style.backgroundColor = "red";
+        document.getElementById("solution").innerText = `Solución correcta: ${words[letter].answer}`;
+      }
+      document.getElementById("answer").value = "";
+      letters.splice(current, 1);
+      if (letters.length > 0) {
+        current %= letters.length;
+        nextQuestion();
+      } else {
+        clearInterval(timer);
+        endGame("¡Rosco completado!");
+      }
+    }
+
+    function passWord() {
+      current = (current + 1) % letters.length;
+      nextQuestion();
+    }
+
+    function endGame(message) {
+      document.getElementById("hint").innerText = message;
+      document.getElementById("play-button").style.display = "inline-block";
+    }
+  </script>
+</body>
+</html>
